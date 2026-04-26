@@ -1,0 +1,40 @@
+package dev.metallurgists.hematite.common.rule_test;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.metallurgists.hematite.registry.HematiteRuleTestTypes;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.RegistryCodecs;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTest;
+import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTestType;
+
+public class BlockSetMatchTest extends RuleTest {
+
+    public static final MapCodec<BlockSetMatchTest> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            RegistryCodecs.homogeneousList(Registries.BLOCK).fieldOf("blocks").forGetter(b -> b.blocks),
+            Codec.FLOAT.optionalFieldOf("probability", 1f).forGetter(b -> b.probability)
+    ).apply(instance, BlockSetMatchTest::new));
+
+    private final HolderSet<Block> blocks;
+    private final float probability;
+
+    public BlockSetMatchTest(HolderSet<Block> blocks, Float chance) {
+        this.blocks = blocks;
+        this.probability = chance;
+    }
+
+    @Override
+    public boolean test(BlockState state, RandomSource random) {
+        return state.is(blocks) && random.nextFloat() < this.probability;
+    }
+
+    @Override
+    protected RuleTestType<BlockSetMatchTest> getType() {
+        return HematiteRuleTestTypes.BLOCK_SET_MATCH_TEST.get();
+    }
+}

@@ -1,0 +1,24 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "dev.metallurgists.hematite.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "BlockBehaviourMixin",
+    "BlockMixin",
+    "FluidInteractionRegistryMixin",
+    "LightningBoltMixin",
+    "LiquidBlockMixin",
+    "ServerLevelMixin",
+    "accessor.BiomeAccessor",
+    "accessor.RandomBlockMatchTestAccessor"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

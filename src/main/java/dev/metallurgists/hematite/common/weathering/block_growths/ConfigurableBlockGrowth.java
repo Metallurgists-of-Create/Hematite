@@ -1,0 +1,261 @@
+package dev.metallurgists.hematite.common.weathering.block_growths;
+
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.metallurgists.hematite.api.area_condition.AreaCondition;
+import dev.metallurgists.hematite.api.position_test.PositionTest;
+import dev.metallurgists.hematite.api.weathering.block_growths.BlockGrowth;
+import dev.metallurgists.hematite.api.weathering.block_growths.TickSource;
+import dev.metallurgists.hematite.api.weathering.block_growths.helpers.BlockPair;
+import dev.metallurgists.hematite.mixin.accessor.RandomBlockMatchTestAccessor;
+import dev.metallurgists.hematite.registry.HematiteBlockGrowthTypes;
+import net.minecraft.core.*;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.random.SimpleWeightedRandomList;
+import net.minecraft.util.random.WeightedEntry;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.levelgen.structure.templatesystem.AlwaysTrueTest;
+import net.minecraft.world.level.levelgen.structure.templatesystem.RuleTest;
+
+import javax.annotation.Nullable;
+import java.util.*;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+public class ConfigurableBlockGrowth implements BlockGrowth {
+    public static final ConfigurableBlockGrowth EMPTY = new ConfigurableBlockGrowth(List.of(), 1,
+            AlwaysTrueTest.INSTANCE, AreaCondition.EMPTY, List.of(), Optional.of(HolderSet.direct(Holder.direct(Blocks.AIR))),
+            List.of(), false, false);
+
+    public static final MapCodec<ConfigurableBlockGrowth> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            TickSource.HOLDER_CODEC.listOf().optionalFieldOf("tick_sources", List.of()).forGetter(ConfigurableBlockGrowth::getTickSources),
+            Codec.FLOAT.fieldOf("growth_chance").forGetter(ConfigurableBlockGrowth::getGrowthChance),
+            RuleTest.CODEC.fieldOf("replacing_target").forGetter(ConfigurableBlockGrowth::getTargetPredicate),
+            AreaCondition.CODEC.optionalFieldOf("area_condition", AreaCondition.EMPTY).forGetter(ConfigurableBlockGrowth::getAreaCondition),
+            DirectionalList.CODEC.listOf().fieldOf("growth_for_face").forGetter(ConfigurableBlockGrowth::encodeRandomLists),
+            RegistryCodecs.homogeneousList(Registries.BLOCK).optionalFieldOf("owners").forGetter(b -> Optional.ofNullable(b.owners)),
+            PositionTest.CODEC.listOf().optionalFieldOf("position_predicates", List.of()).forGetter(ConfigurableBlockGrowth::getPositionTests),
+            Codec.BOOL.optionalFieldOf("target_self", false).forGetter(ConfigurableBlockGrowth::targetSelf),
+            Codec.BOOL.optionalFieldOf("destroy_target", false).forGetter(ConfigurableBlockGrowth::destroyTarget)
+    ).apply(instance, ConfigurableBlockGrowth::new));
+
+    @Nullable
+    private final HolderSet<Block> owners;
+    private final List<Holder<TickSource>> tickSources;
+    private final float growthChance;
+    private final RuleTest targetPredicate;
+    private final SimpleWeightedRandomList<Direction> growthForDirection;
+    private final Map<Direction, SimpleWeightedRandomList<BlockPair>> blockGrowths;
+    private final Set<Block> possibleBlocks;
+    private final List<PositionTest> positionTests;
+    private final boolean targetSelf;
+    private final boolean destroyTarget;
+
+    private final int maxRange;
+    private final AreaCondition areaCondition;
+
+    public ConfigurableBlockGrowth(List<Holder<TickSource>> sources, float growthChance,
+                                   RuleTest targetPredicate, AreaCondition areaCheck,
+                                   List<DirectionalList> growthForDirection,
+                                   Optional<HolderSet<Block>> owners, List<PositionTest> biomePredicates,
+                                   Boolean targetSelf, Boolean destroyTarget) {
+        this.tickSources = sources;
+        this.growthChance = growthChance;
+        this.owners = owners.orElse(null);
+        this.positionTests = biomePredicates;
+        this.targetPredicate = targetPredicate;
+
+        SimpleWeightedRandomList.Builder<Direction> dirBuilder = SimpleWeightedRandomList.builder();
+        ImmutableMap.Builder<Direction, SimpleWeightedRandomList<BlockPair>> growthBuilder = new ImmutableMap.Builder<>();
+        ImmutableSet.Builder<Block> blockBuilder = new ImmutableSet.Builder<>();
+        for (var randomBlockList : growthForDirection) {
+            if (randomBlockList.direction.isEmpty()) {
+                dirBuilder = SimpleWeightedRandomList.builder();
+                growthBuilder = new ImmutableMap.Builder<>();
+                blockBuilder = new ImmutableSet.Builder<>();
+                decodeRandomList(Direction.UP, dirBuilder, growthBuilder, blockBuilder, randomBlockList);
+                for (Direction d : Direction.values()) {
+                    if (d != Direction.UP) {
+                        growthBuilder.put(d, randomBlockList.randomList);
+                        dirBuilder.add(d, 1);
+                    }
+                }
+                break;
+            } else {
+                decodeRandomList(randomBlockList.direction.get(), dirBuilder, growthBuilder, blockBuilder, randomBlockList);
+            }
+        }
+        this.growthForDirection = dirBuilder.build();
+        this.blockGrowths = growthBuilder.build();
+        this.possibleBlocks = blockBuilder.build();
+
+        this.areaCondition = areaCheck;
+        this.maxRange = areaCondition.getMaxRange();
+        this.targetSelf = targetSelf;
+        this.destroyTarget = destroyTarget;
+    }
+
+    private void decodeRandomList(Direction direction, SimpleWeightedRandomList.Builder<Direction> dirBuilder, ImmutableMap.Builder<Direction,
+            SimpleWeightedRandomList<BlockPair>> growthBuilder, ImmutableSet.Builder<Block> blockBuilder, DirectionalList v) {
+        int weight = v.weight.orElse(1);
+        dirBuilder.add(direction, weight);
+        growthBuilder.put(direction, v.randomList);
+        v.randomList.unwrap().stream().map(WeightedEntry.Wrapper::data).forEach(o -> {
+            BlockState f = o.getFirst();
+            if (f != null) blockBuilder.add(f.getBlock());
+            BlockState s = o.getFirst();
+            if (s != null) blockBuilder.add(s.getBlock());
+        });
+    }
+
+    public List<DirectionalList> encodeRandomLists() {
+        List<DirectionalList> list = new ArrayList<>();
+        for (var e : growthForDirection.unwrap()) {
+            Optional<Direction> dir = Optional.of(e.data());
+            Optional<Integer> weight = Optional.of(e.getWeight().asInt());
+            list.add(new DirectionalList(dir, weight, blockGrowths.get(e.data())));
+        }
+        return list;
+    }
+
+    public RuleTest getTargetPredicate() {
+        return targetPredicate;
+    }
+
+    public AreaCondition getAreaCondition() {
+        return areaCondition;
+    }
+
+    public Set<Block> getPossibleBlocks() {
+        return this.possibleBlocks;
+    }
+
+    public boolean targetSelf() {
+        return targetSelf;
+    }
+
+    public boolean destroyTarget() {
+        return destroyTarget;
+    }
+
+    public List<PositionTest> getPositionTests() {
+        return this.positionTests;
+    }
+
+    @Override
+    public List<Holder<TickSource>> getTickSources() {
+        return tickSources;
+    }
+
+    public boolean isEmpty() {
+        return this.possibleBlocks.isEmpty();
+    }
+
+    private boolean canGrow(BlockPos pos, Level level, Supplier<Holder<Biome>> biome) {
+        if (this.growthChance == 0) return false;
+        if (level.random.nextFloat() < this.growthChance) {
+            for (PositionTest positionTest : this.positionTests) {
+                if (!positionTest.test(biome, pos, level)) return false;
+            }
+            return level.isAreaLoaded(pos, maxRange);
+        }
+        return false;
+    }
+
+    public float getGrowthChance() {
+        return growthChance;
+    }
+
+    public HolderSet<Block> getOwnersHolder() {
+        return this.owners;
+    }
+
+    @Override
+    public Type<?> getType() {
+        return HematiteBlockGrowthTypes.CONFIGURABLE.get();
+    }
+
+    @Nullable
+    @Override
+    public Iterable<Block> getOwners() {
+        if (owners == null) return null;
+        return this.owners.stream().map(Holder::value).collect(Collectors.toList());
+    }
+
+    @Override
+    public void tryGrowing(BlockPos pos, BlockState self, ServerLevel level, Supplier<Holder<Biome>> biome) {
+
+        if (this.canGrow(pos, level, biome)) {
+            Direction dir = this.growthForDirection.getRandomValue(level.random).orElse(Direction.UP);
+
+            RandomSource seed = RandomSource.create(Mth.getSeed(pos));
+            BlockPos targetPos = targetSelf ? pos : pos.relative(dir);
+            BlockState target = level.getBlockState(targetPos);
+
+            if (targetSelf || targetPredicate.test(target, seed)) {
+                if (targetSelf && targetPredicate instanceof RandomBlockMatchTestAccessor rbm) {
+                    if ((seed.nextFloat() >= rbm.getProbability())) return;
+                }
+                var l = blockGrowths.get(dir);
+                if (l != null) {
+                    var toPlace = l.getRandomValue(level.random).orElse(null);
+                    if (toPlace != null && toPlace.getFirst().canSurvive(level, targetPos)) {
+                        BlockPos targetPos2 = null;
+                        BlockState target2 = null;
+                        boolean db = toPlace.isDouble();
+                        if (db) {
+                            targetPos2 = targetPos.relative(dir);
+                            target2 = level.getBlockState(targetPos2);
+                            seed = RandomSource.create(Mth.getSeed(pos));
+                            if (!targetPredicate.test(target2, seed)) {
+                                return;
+                            }
+                        }
+
+                        if (areaCondition.test(pos, level, this)) {
+
+                            if (destroyTarget) {
+                                level.destroyBlock(targetPos, true);
+                            }
+                            level.setBlockAndUpdate(targetPos, getStateToPlace(toPlace.getFirst(), target, level, targetPos));
+                            if (db) {
+                                if (destroyTarget) level.destroyBlock(targetPos2, true);
+                                level.setBlockAndUpdate(targetPos2, getStateToPlace(toPlace.getSecond(), target2, level, pos));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    //builtin waterlogged support
+    private BlockState getStateToPlace(BlockState toPlace, BlockState target, Level level, BlockPos pos) {
+        if (toPlace.hasProperty(BlockStateProperties.WATERLOGGED) && target.getFluidState().is(FluidTags.WATER)) {
+            return toPlace.setValue(BlockStateProperties.WATERLOGGED, true);
+        }
+        return Block.updateFromNeighbourShapes(toPlace, level, pos);
+    }
+
+
+    public record DirectionalList(Optional<Direction> direction, Optional<Integer> weight, SimpleWeightedRandomList<BlockPair> randomList) {
+
+        public static final Codec<DirectionalList> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Direction.CODEC.optionalFieldOf("direction").forGetter(DirectionalList::direction),
+                Codec.INT.optionalFieldOf("weight").forGetter(DirectionalList::weight),
+                SimpleWeightedRandomList.wrappedCodec(BlockPair.CODEC).fieldOf("growth").forGetter(DirectionalList::randomList)
+        ).apply(instance, DirectionalList::new));
+    }
+}

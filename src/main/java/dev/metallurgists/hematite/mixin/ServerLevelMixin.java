@@ -1,7 +1,6 @@
 package dev.metallurgists.hematite.mixin;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import dev.metallurgists.hematite.api.weathering.block_growths.TickSource;
 import dev.metallurgists.hematite.api.weathering.block_growths.data.BlockGrowthHandler;
 import dev.metallurgists.hematite.api.weathering.block_growths.helpers.SkyAccess;
 import dev.metallurgists.hematite.registry.HematiteTickSources;

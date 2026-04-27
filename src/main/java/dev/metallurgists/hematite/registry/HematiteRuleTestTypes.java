@@ -2,7 +2,6 @@ package dev.metallurgists.hematite.registry;
 
 import com.mojang.serialization.MapCodec;
 import dev.metallurgists.hematite.Hematite;
-import dev.metallurgists.hematite.HematiteRegistries;
 import dev.metallurgists.hematite.common.rule_test.*;
 import dev.metallurgists.hematite.util.ModUtils;
 import net.minecraft.core.registries.Registries;

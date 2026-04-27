@@ -1,6 +1,5 @@
 package dev.metallurgists.hematite.event;
 
-import dev.metallurgists.hematite.api.weathering.block_growths.TickSource;
 import dev.metallurgists.hematite.api.weathering.block_growths.data.BlockGrowthHandler;
 import dev.metallurgists.hematite.api.weathering.block_growths.events.LightningStruckBlockEvent;
 import dev.metallurgists.hematite.api.weathering.block_growths.helpers.SkyAccess;

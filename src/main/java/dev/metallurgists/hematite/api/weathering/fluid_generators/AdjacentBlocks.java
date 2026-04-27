@@ -91,7 +91,7 @@ public class AdjacentBlocks {
         }
 
         if (downBlock != null) {
-            if (testFails(downBlock, pos, level, neighborCache, extraCheck, b, Direction.DOWN)) return false;
+            return !testFails(downBlock, pos, level, neighborCache, extraCheck, b, Direction.DOWN);
         }
 
         return true;

@@ -34,6 +34,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class ConfigurableBlockGrowth implements BlockGrowth {
     public static final ConfigurableBlockGrowth EMPTY = new ConfigurableBlockGrowth(List.of(), 1,
             AlwaysTrueTest.INSTANCE, AreaCondition.EMPTY, List.of(), Optional.of(HolderSet.direct(Holder.direct(Blocks.AIR))),

@@ -19,6 +19,7 @@ import javax.annotation.Nullable;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class EntityTest implements PositionTest {
 
     public static final MapCodec<EntityTest> CODEC = RecordCodecBuilder.mapCodec((i) -> i.group(

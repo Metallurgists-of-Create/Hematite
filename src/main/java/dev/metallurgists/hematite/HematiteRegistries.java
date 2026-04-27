@@ -3,6 +3,7 @@ package dev.metallurgists.hematite;
 import com.mojang.serialization.Lifecycle;
 import dev.metallurgists.hematite.api.area_condition.AreaConditionType;
 import dev.metallurgists.hematite.api.position_test.PositionTestType;
+import dev.metallurgists.hematite.api.recipe.ingredient.BlockIngredientType;
 import dev.metallurgists.hematite.api.weathering.block_growths.BlockGrowth;
 import dev.metallurgists.hematite.api.weathering.block_growths.TickSource;
 import dev.metallurgists.hematite.api.weathering.fluid_generators.FluidGeneratorType;
@@ -26,6 +27,7 @@ public class HematiteRegistries {
     public static final ResourceKey<Registry<FluidGeneratorType<?>>> FLUID_GENERATOR_TYPE = HematiteRegistries.createRegistryKey("fluid_generator_types");
     public static final ResourceKey<Registry<AreaConditionType<?>>> AREA_CONDITION_TYPE = HematiteRegistries.createRegistryKey("area_condition_types");
     public static final ResourceKey<Registry<PositionTestType<?>>> POSITION_TEST_TYPE = HematiteRegistries.createRegistryKey("position_test_types");
+    public static final ResourceKey<Registry<BlockIngredientType<?>>> BLOCK_INGREDIENT_TYPE = HematiteRegistries.createRegistryKey("block_ingredient_types");
 
 
     public static final Registry<Spreader> SPREADER_REGISTRY = HematiteRegistries.makeSyncedRegistry(SPREADER);
@@ -35,6 +37,7 @@ public class HematiteRegistries {
     public static final Registry<FluidGeneratorType<?>> FLUID_GENERATOR_TYPE_REGISTRY = HematiteRegistries.makeSyncedRegistry(FLUID_GENERATOR_TYPE);
     public static final Registry<AreaConditionType<?>> AREA_CONDITION_TYPE_REGISTRY = HematiteRegistries.makeSyncedRegistry(AREA_CONDITION_TYPE);
     public static final Registry<PositionTestType<?>> POSITION_TEST_TYPE_REGISTRY = HematiteRegistries.makeSyncedRegistry(POSITION_TEST_TYPE);
+    public static final Registry<BlockIngredientType<?>> BLOCK_INGREDIENT_TYPE_REGISTRY = HematiteRegistries.makeSyncedRegistry(BLOCK_INGREDIENT_TYPE);
 
     private static <T> ResourceKey<Registry<T>> createRegistryKey(String name) {
         return ResourceKey.createRegistryKey(Hematite.asResource(name));
@@ -60,6 +63,7 @@ public class HematiteRegistries {
         event.register(FLUID_GENERATOR_TYPE_REGISTRY);
         event.register(AREA_CONDITION_TYPE_REGISTRY);
         event.register(POSITION_TEST_TYPE_REGISTRY);
+        event.register(BLOCK_INGREDIENT_TYPE_REGISTRY);
     }
 
     public static void staticInit() {

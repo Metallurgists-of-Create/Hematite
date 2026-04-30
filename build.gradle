@@ -24,6 +24,19 @@ repositories {
             includeGroup("maven.modrinth")
         }
     }
+    exclusiveContent { // KubeJS and Rhino
+        forRepository { maven { url = "https://maven.latvian.dev/releases" } }
+        filter {
+            includeGroup("dev.latvian.mods")
+            includeGroup("dev.latvian.apps")
+        }
+    }
+    maven {
+        url 'https://jitpack.io'
+        content {
+            includeGroup "com.github.rtyley"
+        }
+    }
 }
 
 base {
@@ -60,7 +73,7 @@ neoForge {
 
         data {
             data()
-            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+            programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath(), '--exisiting-mod', 'kubejs'
         }
 
         configureEach {
@@ -82,6 +95,12 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 dependencies {
     compileOnly "dev.emi:emi-neoforge:${emi_version}:api"
     runtimeOnly "dev.emi:emi-neoforge:${emi_version}"
+
+    compileOnly "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
+    runtimeOnly "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
+    compileOnly "dev.latvian.mods:rhino:${rhino_version}"
+    runtimeOnly "dev.latvian.mods:rhino:${rhino_version}"
+
 }
 
 var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {

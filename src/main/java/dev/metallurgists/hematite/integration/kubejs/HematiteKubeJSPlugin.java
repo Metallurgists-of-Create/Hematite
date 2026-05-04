@@ -2,6 +2,7 @@ package dev.metallurgists.hematite.integration.kubejs;
 
 
 import dev.latvian.mods.kubejs.event.EventGroupRegistry;
+import dev.latvian.mods.kubejs.generator.KubeDataGenerator;
 import dev.latvian.mods.kubejs.plugin.ClassFilter;
 import dev.latvian.mods.kubejs.plugin.KubeJSPlugin;
 import dev.latvian.mods.kubejs.recipe.schema.RecipeSchemaRegistry;
@@ -15,6 +16,7 @@ import dev.metallurgists.hematite.api.weathering.block_growths.BlockGrowth;
 import dev.metallurgists.hematite.api.weathering.block_growths.TickSource;
 import dev.metallurgists.hematite.event.CommonEvents;
 import dev.metallurgists.hematite.integration.kubejs.builder.TickSourceJSBuilder;
+import dev.metallurgists.hematite.integration.kubejs.event.HematiteDataEventJS;
 import dev.metallurgists.hematite.util.HematiteObjects;
 
 public class HematiteKubeJSPlugin implements KubeJSPlugin {
@@ -54,5 +56,12 @@ public class HematiteKubeJSPlugin implements KubeJSPlugin {
     @Override
     public void registerRecipeSchemas(RecipeSchemaRegistry registry) {
         var hematite = registry.namespace("hematite");
+    }
+
+    @Override
+    public void generateData(KubeDataGenerator generator) {
+        if (HematiteJSEvents.data.hasListeners()) {
+            HematiteJSEvents.data.post(new HematiteDataEventJS(generator));
+        }
     }
 }

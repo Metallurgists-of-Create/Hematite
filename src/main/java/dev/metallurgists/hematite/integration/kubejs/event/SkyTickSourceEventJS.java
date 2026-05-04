@@ -43,10 +43,10 @@ public class SkyTickSourceEventJS implements KubeLevelEvent {
     }
 
     public Holder<TickSource> getTickSource() {
-        return event.tickSource;
+        return event.getTickSource();
     }
 
     public void setTickSource(Holder<TickSource> tickSource) {
-        event.tickSource = tickSource;
+        if (tickSource != null) event.setTickSource(tickSource);
     }
 }

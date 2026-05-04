@@ -2,6 +2,7 @@ package dev.metallurgists.hematite.integration.kubejs;
 
 
 import dev.latvian.mods.kubejs.event.EventGroupRegistry;
+import dev.latvian.mods.kubejs.plugin.ClassFilter;
 import dev.latvian.mods.kubejs.plugin.KubeJSPlugin;
 import dev.latvian.mods.kubejs.recipe.schema.RecipeSchemaRegistry;
 import dev.latvian.mods.kubejs.registry.BuilderTypeRegistry;
@@ -12,7 +13,9 @@ import dev.metallurgists.hematite.api.area_condition.AreaCondition;
 import dev.metallurgists.hematite.api.position_test.PositionTest;
 import dev.metallurgists.hematite.api.weathering.block_growths.BlockGrowth;
 import dev.metallurgists.hematite.api.weathering.block_growths.TickSource;
+import dev.metallurgists.hematite.event.CommonEvents;
 import dev.metallurgists.hematite.integration.kubejs.builder.TickSourceJSBuilder;
+import dev.metallurgists.hematite.util.HematiteObjects;
 
 public class HematiteKubeJSPlugin implements KubeJSPlugin {
 
@@ -21,7 +24,6 @@ public class HematiteKubeJSPlugin implements KubeJSPlugin {
         Hematite.LOGGER.debug("Initiating KubeJS integration for Hematite");
     }
 
-    //This motherfucker doesn't actually work...
     @Override
     public void registerBuilderTypes(BuilderTypeRegistry registry) {
         registry.addDefault(HematiteRegistries.TICK_SOURCE, TickSourceJSBuilder.class, TickSourceJSBuilder::new);
@@ -33,6 +35,15 @@ public class HematiteKubeJSPlugin implements KubeJSPlugin {
         event.add("AreaCondition", AreaCondition.class);
         event.add("PositionTest", PositionTest.class);
         event.add("BlockGrowth", BlockGrowth.class);
+        event.add("HematiteObjects", HematiteObjects.class);
+    }
+
+    @Override
+    public void registerClasses(ClassFilter filter) {
+        filter.deny(Hematite.class);
+        filter.deny(CommonEvents.class);
+        filter.allow(Hematite.class.getPackageName());
+        filter.deny(Hematite.class.getPackageName() + ".mixin");
     }
 
     @Override

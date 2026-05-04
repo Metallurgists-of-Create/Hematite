@@ -1,10 +1,13 @@
 package dev.metallurgists.hematite.api.weathering.block_growths.helpers;
 
+import dev.metallurgists.hematite.Hematite;
 import dev.metallurgists.hematite.api.weathering.block_growths.TickSource;
 import dev.metallurgists.hematite.api.weathering.block_growths.data.BlockGrowthHandler;
 import dev.metallurgists.hematite.registry.HematiteTickSources;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.state.BlockState;
@@ -74,6 +77,7 @@ public class SkyAccess {
         }
 
         public void setTickSource(Holder<TickSource> tickSource) {
+            Hematite.LOGGER.debug("Setting tick source for block at {} to {}", targetPos, tickSource.unwrapKey().map(ResourceKey::location).orElse(Hematite.asResource("missingsource")));
             this.tickSource = tickSource;
         }
 

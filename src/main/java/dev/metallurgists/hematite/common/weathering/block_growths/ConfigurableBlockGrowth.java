@@ -14,7 +14,6 @@ import dev.metallurgists.hematite.mixin.accessor.RandomBlockMatchTestAccessor;
 import dev.metallurgists.hematite.registry.HematiteBlockGrowthTypes;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -196,8 +195,8 @@ public class ConfigurableBlockGrowth implements BlockGrowth {
     }
 
     @Override
-    public void tryGrowing(BlockPos pos, BlockState self, Level level, Supplier<Holder<Biome>> biome) {
-
+    public List<BlockPos> tryGrowing(BlockPos pos, BlockState self, Level level, Supplier<Holder<Biome>> biome) {
+        List<BlockPos> affectedBlocks = new ArrayList<>();
         if (this.canGrow(pos, level, biome)) {
             Direction dir = this.growthForDirection.getRandomValue(level.random).orElse(Direction.UP);
 
@@ -207,7 +206,7 @@ public class ConfigurableBlockGrowth implements BlockGrowth {
 
             if (targetSelf || targetPredicate.test(target, seed)) {
                 if (targetSelf && targetPredicate instanceof RandomBlockMatchTestAccessor rbm) {
-                    if ((seed.nextFloat() >= rbm.getProbability())) return;
+                    if ((seed.nextFloat() >= rbm.getProbability())) return affectedBlocks;
                 }
                 var l = blockGrowths.get(dir);
                 if (l != null) {
@@ -221,7 +220,7 @@ public class ConfigurableBlockGrowth implements BlockGrowth {
                             target2 = level.getBlockState(targetPos2);
                             seed = RandomSource.create(Mth.getSeed(pos));
                             if (!targetPredicate.test(target2, seed)) {
-                                return;
+                                return affectedBlocks;
                             }
                         }
 
@@ -230,16 +229,17 @@ public class ConfigurableBlockGrowth implements BlockGrowth {
                             if (destroyTarget) {
                                 level.destroyBlock(targetPos, true);
                             }
-                            level.setBlockAndUpdate(targetPos, getStateToPlace(toPlace.getFirst(), target, level, targetPos));
+                            level.setBlockAndUpdate(targetPos, getStateToPlace(toPlace.getFirst(), target, level, targetPos)); affectedBlocks.add(targetPos);
                             if (db) {
                                 if (destroyTarget) level.destroyBlock(targetPos2, true);
-                                level.setBlockAndUpdate(targetPos2, getStateToPlace(toPlace.getSecond(), target2, level, pos));
+                                level.setBlockAndUpdate(targetPos2, getStateToPlace(toPlace.getSecond(), target2, level, pos)); affectedBlocks.add(targetPos2);
                             }
                         }
                     }
                 }
             }
         }
+        return affectedBlocks;
     }
 
     //builtin waterlogged support

@@ -45,24 +45,29 @@ public class BlockGrowthHandler extends RegistryAccessJsonReloadListener {
         return Optional.ofNullable(GROWTH_FOR_BLOCK.get(source)).map(m -> m.get(block));
     }
 
-    public static void tickBlock(Holder<TickSource> source, BlockState state, Level level, BlockPos pos) {
-        if (!HematiteConfigs.SERVER.blockGrowths.get()) return;
+    public static List<BlockPos> tickBlock(Holder<TickSource> source, BlockState state, Level level, BlockPos pos) {
+        if (!HematiteConfigs.SERVER.blockGrowths.get()) return List.of();
 
         Supplier<Holder<Biome>> biome = Suppliers.memoize(() -> level.getBiome(pos));
 
         var universalGroup = UNIVERSAL_GROWTHS.get(source);
 
+        List<BlockPos> affectedBlocks = new ArrayList<>();
+
         if (universalGroup != null) {
             for (var config : universalGroup) {
-                config.tryGrowing(pos, state, level, biome);
+                List<BlockPos> success = config.tryGrowing(pos, state, level, biome);
+                affectedBlocks.addAll(success);
             }
         }
         var growth = getBlockGrowths(source, state.getBlock());
         if (growth.isPresent()) {
             for (var config : growth.get()) {
-                config.tryGrowing(pos, state, level, biome);
+                List<BlockPos> success = config.tryGrowing(pos, state, level, biome);
+                affectedBlocks.addAll(success);
             }
         }
+        return affectedBlocks;
     }
 
     @Override
@@ -75,9 +80,6 @@ public class BlockGrowthHandler extends RegistryAccessJsonReloadListener {
         List<BlockGrowth> growths = new ArrayList<>();
 
         for (var e : map.entrySet()) {
-            //blacklist
-            if (HematiteConfigs.SERVER.disabledGrowths.get().contains(e.getKey().toString().toLowerCase(Locale.ROOT))) continue;
-
             var json = e.getValue();
 
             var result = BlockGrowth.CODEC.parse(RegistryOps.create(JsonOps.INSTANCE, registryAccess), json);

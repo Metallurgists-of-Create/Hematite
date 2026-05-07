@@ -2,12 +2,8 @@ package dev.metallurgists.hematite.util;
 
 import dev.metallurgists.hematite.HematiteRegistries;
 import dev.metallurgists.hematite.api.weathering.block_growths.TickSource;
-import dev.metallurgists.hematite.api.weathering.block_growths.data.BlockGrowthHandler;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 
 public class HematiteObjects {
 
@@ -15,8 +11,4 @@ public class HematiteObjects {
         return HematiteRegistries.TICK_SOURCE_REGISTRY.getOptional(ResourceLocation.parse(id)).map(HematiteRegistries.TICK_SOURCE_REGISTRY::wrapAsHolder).orElse(null);
     }
 
-    public static void callGrowth(Holder<TickSource> source, Level level, BlockPos blockPos) {
-        BlockState state = level.getBlockState(blockPos);
-        BlockGrowthHandler.tickBlock(source, state, level, blockPos);
-    }
 }

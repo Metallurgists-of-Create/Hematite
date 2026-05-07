@@ -1,6 +1,7 @@
 package dev.metallurgists.hematite;
 
 import dev.metallurgists.hematite.config.HematiteConfigs;
+import dev.metallurgists.hematite.event.CommonEvents;
 import dev.metallurgists.hematite.registry.*;
 import dev.metallurgists.hematite.util.ModUtils;
 import dev.metallurgists.hematite.util.RegistryAccessJsonReloadListener;
@@ -11,19 +12,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.lang.ref.WeakReference;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 @Mod(Hematite.ID)
 public class Hematite {
@@ -35,9 +30,8 @@ public class Hematite {
     public Hematite(IEventBus modEventBus, ModContainer modContainer) {
         this.modEventBus = modEventBus;
         INSTANCE = this;
-        addReloadableCommonSetup(Hematite::afterDataReloadOrDataSync);
-        modEventBus.addListener(this::commonSetup);
         NeoForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(new CommonEvents());
 
         HematiteAreaConditionTypes.staticInit();
         HematiteBlockGrowthTypes.staticInit();
@@ -45,6 +39,8 @@ public class Hematite {
         HematitePositionTestTypes.staticInit();
         HematiteRuleTestTypes.staticInit();
         HematiteTickSources.staticInit();
+
+        NeoForge.EVENT_BUS.addListener(TagsUpdatedEvent.class, (event) -> afterDataReloadOrDataSync(event.getRegistryAccess()));
 
         modContainer.registerConfig(ModConfig.Type.SERVER, HematiteConfigs.serverSpec);
     }
@@ -57,10 +53,6 @@ public class Hematite {
         LOGGER.info("[Hematite] {} Registry", ModUtils.toEng(key.location()));
     }
 
-    private void commonSetup(final FMLCommonSetupEvent event) {
-        LOGGER.info("HELLO FROM COMMON SETUP");
-    }
-
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         LOGGER.info("HELLO from server starting");
@@ -68,20 +60,6 @@ public class Hematite {
 
     private static void afterDataReloadOrDataSync(RegistryAccess registryAccess) {
         RegistryAccessJsonReloadListener.runReloads(registryAccess);
-    }
-
-    public static void addReloadableCommonSetup(Consumer<RegistryAccess> listener) {
-        assertInitPhase();
-        Consumer<TagsUpdatedEvent> eventConsumer = event -> {
-            listener.accept(event.getRegistryAccess());
-        };
-        NeoForge.EVENT_BUS.addListener(eventConsumer);
-    }
-
-    public static void assertInitPhase() {
-        if (ModLoadingContext.get().getActiveNamespace().equals("minecraft")) {
-            throw new AssertionError("Method has to be called during main mod initialization phase. Client and Server initializer are not valid, you must call in the main one");
-        }
     }
 
     public static ResourceLocation asResource(String path) {

@@ -32,7 +32,7 @@ public class CommonEvents {
     }
 
     @SubscribeEvent
-    public static void onLightningHit(LightningStruckBlockEvent event) {
+    public void onLightningHit(LightningStruckBlockEvent event) {
         BlockPos blockPos = event.getPos();
         LevelAccessor level = event.getLevel();
         BlockState blockState = level.getBlockState(blockPos);

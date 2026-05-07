@@ -6,6 +6,7 @@ import dev.metallurgists.hematite.HematiteRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -24,7 +25,7 @@ public interface BlockGrowth {
 
     Collection<Holder<TickSource>> getTickSources();
 
-    void tryGrowing(BlockPos pos, BlockState state, ServerLevel level, Supplier<Holder<Biome>> biome);
+    void tryGrowing(BlockPos pos, BlockState state, Level level, Supplier<Holder<Biome>> biome);
 
 
     record Type<T extends BlockGrowth>(MapCodec<T> codec) { }

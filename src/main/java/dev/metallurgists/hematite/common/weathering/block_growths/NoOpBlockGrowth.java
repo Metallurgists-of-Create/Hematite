@@ -8,6 +8,7 @@ import dev.metallurgists.hematite.registry.HematiteTickSources;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -39,6 +40,6 @@ public class NoOpBlockGrowth implements BlockGrowth {
     }
 
     @Override
-    public void tryGrowing(BlockPos pos, BlockState state, ServerLevel level, Supplier<Holder<Biome>> biome) {
+    public void tryGrowing(BlockPos pos, BlockState state, Level level, Supplier<Holder<Biome>> biome) {
     }
 }

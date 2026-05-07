@@ -75,14 +75,14 @@ public abstract class BlockIngredient implements Predicate<BlockState> {
     }
 
     public static BlockIngredient of(BlockState... states) {
-        return of(Arrays.stream(states).map(BlockState::getBlock));
+        return ofStream(Arrays.stream(states).map(BlockState::getBlock));
     }
 
     public static BlockIngredient of(Block... blocks) {
-        return of(Arrays.stream(blocks));
+        return ofStream(Arrays.stream(blocks));
     }
 
-    private static BlockIngredient of(Stream<Block> blocks) {
+    public static BlockIngredient ofStream(Stream<Block> blocks) {
         return CompoundBlockIngredient.of(blocks.map(BlockIngredient::single));
     }
 

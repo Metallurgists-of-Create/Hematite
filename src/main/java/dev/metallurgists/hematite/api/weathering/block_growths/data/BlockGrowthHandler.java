@@ -18,6 +18,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -44,7 +45,7 @@ public class BlockGrowthHandler extends RegistryAccessJsonReloadListener {
         return Optional.ofNullable(GROWTH_FOR_BLOCK.get(source)).map(m -> m.get(block));
     }
 
-    public static void tickBlock(Holder<TickSource> source, BlockState state, ServerLevel level, BlockPos pos) {
+    public static void tickBlock(Holder<TickSource> source, BlockState state, Level level, BlockPos pos) {
         if (!HematiteConfigs.SERVER.blockGrowths.get()) return;
 
         Supplier<Holder<Biome>> biome = Suppliers.memoize(() -> level.getBiome(pos));

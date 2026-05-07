@@ -196,7 +196,7 @@ public class ConfigurableBlockGrowth implements BlockGrowth {
     }
 
     @Override
-    public void tryGrowing(BlockPos pos, BlockState self, ServerLevel level, Supplier<Holder<Biome>> biome) {
+    public void tryGrowing(BlockPos pos, BlockState self, Level level, Supplier<Holder<Biome>> biome) {
 
         if (this.canGrow(pos, level, biome)) {
             Direction dir = this.growthForDirection.getRandomValue(level.random).orElse(Direction.UP);

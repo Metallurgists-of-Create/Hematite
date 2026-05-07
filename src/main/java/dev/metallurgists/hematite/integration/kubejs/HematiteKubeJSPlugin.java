@@ -5,19 +5,29 @@ import dev.latvian.mods.kubejs.event.EventGroupRegistry;
 import dev.latvian.mods.kubejs.generator.KubeDataGenerator;
 import dev.latvian.mods.kubejs.plugin.ClassFilter;
 import dev.latvian.mods.kubejs.plugin.KubeJSPlugin;
+import dev.latvian.mods.kubejs.plugin.builtin.wrapper.BlockWrapper;
+import dev.latvian.mods.kubejs.recipe.component.RecipeComponentTypeRegistry;
 import dev.latvian.mods.kubejs.recipe.schema.RecipeSchemaRegistry;
 import dev.latvian.mods.kubejs.registry.BuilderTypeRegistry;
 import dev.latvian.mods.kubejs.script.BindingRegistry;
+import dev.latvian.mods.kubejs.script.TypeDescriptionRegistry;
+import dev.latvian.mods.kubejs.script.TypeWrapperRegistry;
+import dev.latvian.mods.rhino.type.TypeInfo;
 import dev.metallurgists.hematite.Hematite;
 import dev.metallurgists.hematite.HematiteRegistries;
 import dev.metallurgists.hematite.api.area_condition.AreaCondition;
 import dev.metallurgists.hematite.api.position_test.PositionTest;
+import dev.metallurgists.hematite.api.recipe.ingredient.BlockIngredient;
 import dev.metallurgists.hematite.api.weathering.block_growths.BlockGrowth;
 import dev.metallurgists.hematite.api.weathering.block_growths.TickSource;
 import dev.metallurgists.hematite.event.CommonEvents;
+import dev.metallurgists.hematite.integration.kubejs.bindings.HematiteBindings;
+import dev.metallurgists.hematite.integration.kubejs.bindings.IngredientBindings;
 import dev.metallurgists.hematite.integration.kubejs.builder.TickSourceJSBuilder;
 import dev.metallurgists.hematite.integration.kubejs.event.HematiteDataEventJS;
+import dev.metallurgists.hematite.integration.kubejs.recipe.BlockIngredientComponent;
 import dev.metallurgists.hematite.util.HematiteObjects;
+import net.minecraft.tags.TagKey;
 
 public class HematiteKubeJSPlugin implements KubeJSPlugin {
 
@@ -38,6 +48,7 @@ public class HematiteKubeJSPlugin implements KubeJSPlugin {
         event.add("PositionTest", PositionTest.class);
         event.add("BlockGrowth", BlockGrowth.class);
         event.add("HematiteObjects", HematiteObjects.class);
+        event.add("Hematite", HematiteBindings.class);
     }
 
     @Override
@@ -46,6 +57,28 @@ public class HematiteKubeJSPlugin implements KubeJSPlugin {
         filter.deny(CommonEvents.class);
         filter.allow(Hematite.class.getPackageName());
         filter.deny(Hematite.class.getPackageName() + ".mixin");
+    }
+
+    @Override
+    public void registerTypeWrappers(TypeWrapperRegistry registry) {
+        registry.register(BlockIngredient.class, IngredientBindings::wrapBlock);
+    }
+
+    @Override
+    public void registerTypeDescriptions(TypeDescriptionRegistry registry) {
+        registry.register(
+                BlockIngredient.class,
+                IngredientBindings.BLOCK_ING_TYPE_INFO.withParams(
+                        BlockWrapper.TYPE_INFO.asArray(),
+                        BlockWrapper.TYPE_INFO,
+                        TypeInfo.of(TagKey.class).withParams(BlockWrapper.TYPE_INFO)
+                )
+        );
+    }
+
+    @Override
+    public void registerRecipeComponents(RecipeComponentTypeRegistry registry) {
+        registry.register(BlockIngredientComponent.TYPE);
     }
 
     @Override

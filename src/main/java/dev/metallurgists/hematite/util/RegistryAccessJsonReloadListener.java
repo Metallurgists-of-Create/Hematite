@@ -27,7 +27,6 @@ public abstract class RegistryAccessJsonReloadListener extends SimpleJsonResourc
                 listener.jsonMap = null;
             }
         }
-
     }
 
     protected RegistryAccessJsonReloadListener(Gson gson, String string) {

@@ -17,7 +17,7 @@ public class HematiteConfigs {
             blockGrowths = builder.define("block_growths", true);
             disabledGrowths = builder
                     .comment("put here the name of a block growth json you want to disable i.e: [hematite:weeds, hematite:weeds_spread].\nNote that this is not the preferred way to do this as block growths are all data driven so it would be best to disable or tweak them by creating a datapack that overrides them\nCheck the mod data folder for the required names. Requires resource reload (/data reload)")
-                    .translation("fell.configgui.block_growth_blacklist")
+                    .translation("hematite.configgui.block_growth_blacklist")
                     .define("block_growth_blacklist", new ArrayList<>());
         }
     }

@@ -4,25 +4,27 @@ import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.mojang.datafixers.util.Either;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.JsonOps;
 import dev.metallurgists.hematite.Hematite;
 import dev.metallurgists.hematite.api.weathering.fluid_generators.FluidGenerator;
 import dev.metallurgists.hematite.util.RegistryAccessJsonReloadListener;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.*;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class FluidGeneratorHandler extends RegistryAccessJsonReloadListener {
 
@@ -48,6 +50,48 @@ public class FluidGeneratorHandler extends RegistryAccessJsonReloadListener {
 
     public FluidGeneratorHandler() {
         super(GSON, "fluid_generators");
+    }
+
+    public static int stillGenerators(@Nullable Either<Holder.Reference<Fluid>, HolderSet.Named<Fluid>> filter) {
+        AtomicInteger size = new AtomicInteger(0);
+        if (filter != null) {
+            filter.ifLeft(fluidReference -> {
+                if (STILL_GENERATORS.containsKey(fluidReference.value())) {
+                    size.getAndAdd(STILL_GENERATORS.get(fluidReference.value()).size());
+                }
+            });
+            filter.ifRight(fluidSet -> {
+                for (Holder.Reference<Fluid> fluidReference : BuiltInRegistries.FLUID.holders().filter(fluidSet::contains).toList()) {
+                    if (STILL_GENERATORS.containsKey(fluidReference.value())) {
+                        size.getAndAdd(STILL_GENERATORS.get(fluidReference.value()).size());
+                    }
+                }
+            });
+        } else {
+            size.getAndAdd(STILL_GENERATORS.values().stream().mapToInt(ImmutableList::size).sum());
+        }
+        return size.get();
+    }
+
+    public static int flowingGenerators(@Nullable Either<Holder.Reference<Fluid>, HolderSet.Named<Fluid>> filter) {
+        AtomicInteger size = new AtomicInteger(0);
+        if (filter != null) {
+            filter.ifLeft(fluidReference -> {
+                if (FLOWING_GENERATORS.containsKey(fluidReference.value())) {
+                    size.getAndAdd(FLOWING_GENERATORS.get(fluidReference.value()).size());
+                }
+            });
+            filter.ifRight(fluidSet -> {
+                for (Holder.Reference<Fluid> fluidReference : BuiltInRegistries.FLUID.holders().filter(fluidSet::contains).toList()) {
+                    if (FLOWING_GENERATORS.containsKey(fluidReference.value())) {
+                        size.getAndAdd(FLOWING_GENERATORS.get(fluidReference.value()).size());
+                    }
+                }
+            });
+        } else {
+            size.getAndAdd(FLOWING_GENERATORS.values().stream().mapToInt(ImmutableList::size).sum());
+        }
+        return size.get();
     }
 
     @Override

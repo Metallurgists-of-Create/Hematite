@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.JsonOps;
 import dev.metallurgists.hematite.Hematite;
 import dev.metallurgists.hematite.api.weathering.block_growths.BlockGrowth;
@@ -14,16 +15,19 @@ import dev.metallurgists.hematite.config.HematiteConfigs;
 import dev.metallurgists.hematite.util.RegistryAccessJsonReloadListener;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 public class BlockGrowthHandler extends RegistryAccessJsonReloadListener {
@@ -43,6 +47,21 @@ public class BlockGrowthHandler extends RegistryAccessJsonReloadListener {
 
     public static Optional<Set<BlockGrowth>> getBlockGrowths(Holder<TickSource> source, Block block) {
         return Optional.ofNullable(GROWTH_FOR_BLOCK.get(source)).map(m -> m.get(block));
+    }
+
+    public static int registeredGrowths(@Nullable Either<Holder.Reference<Block>, HolderSet.Named<Block>> filter) {
+        AtomicInteger size = new AtomicInteger(0);
+        if (filter != null) {
+            filter.ifLeft(block -> size.getAndAdd(GROWTH_FOR_BLOCK.values().stream().filter(blockSetMap -> blockSetMap.containsKey(block.value())).mapToInt(blockSetMap -> blockSetMap.get(block.value()).size()).sum()));
+            filter.ifRight(blockSet -> {
+                for (Holder.Reference<Block> block : BuiltInRegistries.BLOCK.holders().filter(blockSet::contains).toList()) {
+                    size.getAndAdd(GROWTH_FOR_BLOCK.values().stream().filter(blockSetMap -> blockSetMap.containsKey(block.value())).mapToInt(blockSetMap -> blockSetMap.get(block.value()).size()).sum());
+                }
+            });
+        } else {
+            size.getAndAdd(GROWTH_FOR_BLOCK.values().stream().mapToInt(Map::size).sum() + UNIVERSAL_GROWTHS.values().stream().mapToInt(Set::size).sum());
+        }
+        return size.get();
     }
 
     public static List<BlockPos> tickBlock(Holder<TickSource> source, BlockState state, Level level, BlockPos pos) {

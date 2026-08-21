@@ -1,5 +1,11 @@
 {
   "itemGroup.hematite": "Example Mod Tab",
   "block.hematite.example_block": "Example Block",
-  "item.hematite.example_item": "Example Item"
+  "item.hematite.example_item": "Example Item",
+
+  "hematite.command.block_growths.all.success": "There are %1$s Block Growths registered",
+  "hematite.command.block_growths.filtered.success": "There are %1$s Block Growths registered for %2$s",
+
+  "hematite.command.fluid_generators.all.success": "There are %1$s Still Fluid Generators and %2$s Flowing Fluid Generators registered",
+  "hematite.command.fluid_generators.filtered.success": "There are %1$s Still Fluid Generators and %2$s Flowing Fluid Generators registered for %3$s"
 }
